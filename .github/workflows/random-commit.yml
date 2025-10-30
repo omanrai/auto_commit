@@ -1,26 +1,27 @@
 name: Random-but-genuine daily commit
 
-# Run hourly — workflow decides randomly whether to commit.
 on:
   schedule:
     - cron: '0 * * * *'   # minute 0 every hour
-  workflow_dispatch: {}   # allows manual trigger
+  workflow_dispatch: {}
 
 permissions:
-  contents: write   # allow pushing commits via GITHUB_TOKEN
+  contents: write
+
+env:
+  # If running hourly (24 runs/day), 4 => ~1 commit/day (≈4.17% per run)
+  THRESHOLD_PERCENT: '4'
+  AUTHOR_NAME: 'github-actions[bot]'
+  AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
+  LOG_FILE: 'daily-log.md'
+  TIPS_FILE: 'tips.txt'
+  ENTRIES_DIR: 'entries'
+  COUNTER_FILE: 'meta/daily_counter.json'
 
 jobs:
   maybe-commit:
     runs-on: ubuntu-latest
-    env:
-      # Adjust this probability if you want more or fewer commits-per-day.
-      # If running hourly (24 runs/day), 4 => ~1 commit/day (4.17% per run).
-      THRESHOLD_PERCENT: '4'
-      AUTHOR_NAME: 'github-actions[bot]'
-      AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
-      LOG_FILE: 'daily-log.md'         # file that will be appended to
-      TIPS_FILE: 'tips.txt'            # curated tips file in repo root
-      ENTRIES_DIR: 'entries'           # optional one-file-per-entry folder
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,48 +32,53 @@ jobs:
         id: decide
         run: |
           set -euo pipefail
-          THRESHOLD=${THRESHOLD_PERCENT:-4}
-          # Generate percent 1..100
+          THRESHOLD="${THRESHOLD_PERCENT}"
           R=$(( (RANDOM % 100) + 1 ))
-          echo "roll=$R threshold=$THRESHOLD"
-          if [ "$R" -le "$THRESHOLD" ]; then
-            echo "do_commit=true" >> $GITHUB_OUTPUT
+          echo "roll=${R} threshold=${THRESHOLD}"
+          if [ "${R}" -le "${THRESHOLD}" ]; then
+            echo "do_commit=true" >> "$GITHUB_OUTPUT"
           else
-            echo "do_commit=false" >> $GITHUB_OUTPUT
+            echo "do_commit=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prepare content & commit (only if chosen)
         if: steps.decide.outputs.do_commit == 'true'
+        env:
+          LOG_FILE: ${{ env.LOG_FILE }}
+          TIPS_FILE: ${{ env.TIPS_FILE }}
+          ENTRIES_DIR: ${{ env.ENTRIES_DIR }}
+          COUNTER_FILE: ${{ env.COUNTER_FILE }}
+          AUTHOR_NAME: ${{ env.AUTHOR_NAME }}
+          AUTHOR_EMAIL: ${{ env.AUTHOR_EMAIL }}
         run: |
           set -euo pipefail
+
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           HUMAN_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
-          mkdir -p "${ENTRIES_DIR}"
 
-          # Choose a tip from tips.txt if it exists, else fall back to a small quote
+          mkdir -p "${ENTRIES_DIR}"
+          mkdir -p "$(dirname "${COUNTER_FILE}")"
+
+          # Pick a random non-empty tip if the file exists
           if [ -f "${TIPS_FILE}" ]; then
-            # pick a random non-empty line
             TIP=$(grep -v '^[[:space:]]*$' "${TIPS_FILE}" | shuf -n1)
           else
             TIP="Note: keep learning — small steps every day."
           fi
 
-          # Compose a short paragraph using a simple template.
-          # You can extend this template to add more 'genuine' structure.
-          PARAGRAPH="## Quick note (${HUMAN_DATE})\n\n- ${TIP}\n\n> Logged automatically for repository health and study notes.\n\n"
+          # Create a concise entry and append to cumulative log
+          echo "${TIMESTAMP} - ${TIP}" >> "${LOG_FILE}"
 
-          # Append to a cumulative log (good for showing continuity)
-          echo -e "${TIMESTAMP} - ${TIP}" >> "${LOG_FILE}"
-
-          # Create a per-entry file for extra authenticity (one file per commit)
           ENTRY_FILENAME="${ENTRIES_DIR}/entry-$(date -u +"%Y%m%dT%H%M%SZ").md"
-          echo -e "${PARAGRAPH}" > "${ENTRY_FILENAME}"
+          cat > "${ENTRY_FILENAME}" <<EOF
+## Quick note (${HUMAN_DATE})
 
-          # Optionally update README or metadata (small change, less suspicious than noise)
-          # We'll update a tiny JSON counter file to show "progress"
-          COUNTER_FILE="meta/daily_counter.json"
-          mkdir -p "$(dirname "${COUNTER_FILE}")"
-          # read previous count or initialize
+- ${TIP}
+
+> Logged automatically for repository health and study notes.
+EOF
+
+          # Update a small JSON counter for visible metadata
           if [ -f "${COUNTER_FILE}" ]; then
             PREV=$(jq -r '.count // 0' "${COUNTER_FILE}" 2>/dev/null || echo 0)
           else
@@ -86,7 +92,7 @@ jobs:
 }
 EOF
 
-          # Configure git author and commit small, meaningful changes
+          # Configure git author
           git config user.name "${AUTHOR_NAME}"
           git config user.email "${AUTHOR_EMAIL}"
 
@@ -98,8 +104,7 @@ EOF
             exit 0
           fi
 
-          # Use a varied, natural-looking commit message
-          # Examples: "docs: add daily note (2025-10-30)", "chore: daily log entry"
+          # Choose a varied commit subject randomly
           SUBJECTS=(
             "docs: add daily note"
             "chore: daily log entry"
@@ -110,15 +115,20 @@ EOF
           SUBJECT=$(printf "%s\n" "${SUBJECTS[@]}" | shuf -n1)
           git commit -m "${SUBJECT}: ${TIMESTAMP}"
 
-          # Push back to the same branch this workflow was triggered on.
-          # For push target we prefer the repo's default branch (environment var GITHUB_REF_NAME may not always be set).
-          # Use the GITHUB_REF or default to main
-          TARGET_BRANCH="${GITHUB_REF_NAME:-${GITHUB_REF##*/}}"
-          if [ -z "${TARGET_BRANCH}" ] || [ "${TARGET_BRANCH}" = "refs" ]; then
+          # Determine branch name safely (strip refs/heads/ prefix)
+          # Note: GITHUB_REF contains refs/heads/<branch> for branch runs
+          if [ -n "${GITHUB_REF:-}" ]; then
+            REF="${GITHUB_REF#refs/heads/}"
+            TARGET_BRANCH="${REF}"
+          else
             TARGET_BRANCH="main"
           fi
 
-          # Push using GITHUB_TOKEN automatically available in Actions
+          # Fallback: ensure non-empty branch
+          if [ -z "${TARGET_BRANCH}" ]; then
+            TARGET_BRANCH="main"
+          fi
+
           git push origin HEAD:"${TARGET_BRANCH}"
 
       - name: Exit when not chosen
