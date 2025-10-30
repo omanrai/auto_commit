@@ -1,0 +1,29 @@
+Read about the observer pattern and where it fits.
+Try a short daily kata: reverse a string in 3 ways.
+Note: small, consistent progress beats sporadic sprinting.
+Bookmark that article on HTTP/2 multiplexing.
+Refactor: keep functions under 50 lines if possible.
+Write a failing test first, then the minimal fix.
+Tiny UX: reduce one click from the main flow.
+Read RFC 2119 for clear imperative language.
+Experiment: CSS grid to simplify layout.
+Document one API endpoint contract today.
+Check package upgrades, especially devDependencies.
+Explore a new npm package and summarize it.
+Test edge cases for input validation.
+Add a short description to one open issue.
+Sketch a small wireframe for the onboarding flow.
+Write a short script to automate a repetitive task.
+Measure page load time and note the result.
+Try using map/filter/reduce in a short example.
+Summarize one chapter from a technical book.
+Try a different keyboard shortcut for efficiency.
+List three user stories for a small feature.
+Add a TODO with rationale in code comments.
+Note a performance hotspot and a possible fix.
+Write down one debugging tip you used today.
+Update a README with a clearer getting-started step.
+Check one CI job for flakiness and note it.
+Create a minimal reproducible example for an issue.
+Draft a short commit message template for the repo.
+Reflect: what was the smallest useful change today?
