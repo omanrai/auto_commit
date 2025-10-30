@@ -1,22 +1,21 @@
-name: Random-but-genuine daily commit
+name: Random but genuine daily commit
 
 on:
   schedule:
-    - cron: '0 * * * *'   # minute 0 every hour
-  workflow_dispatch: {}
+    - cron: "0 * * * *"     # Runs every hour
+  workflow_dispatch: {}      # Allows manual run
 
 permissions:
   contents: write
 
 env:
-  # If running hourly (24 runs/day), 4 => ~1 commit/day (≈4.17% per run)
-  THRESHOLD_PERCENT: '4'
-  AUTHOR_NAME: 'github-actions[bot]'
-  AUTHOR_EMAIL: '41898282+github-actions[bot]@users.noreply.github.com'
-  LOG_FILE: 'daily-log.md'
-  TIPS_FILE: 'tips.txt'
-  ENTRIES_DIR: 'entries'
-  COUNTER_FILE: 'meta/daily_counter.json'
+  THRESHOLD_PERCENT: "4"    # ~1 commit/day if running hourly
+  AUTHOR_NAME: "github-actions[bot]"
+  AUTHOR_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+  LOG_FILE: "daily-log.md"
+  TIPS_FILE: "tips.txt"
+  ENTRIES_DIR: "entries"
+  COUNTER_FILE: "meta/daily_counter.json"
 
 jobs:
   maybe-commit:
@@ -28,109 +27,80 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Decide randomly whether to commit (approx THRESHOLD_PERCENT per run)
+      - name: Decide randomly whether to commit
         id: decide
         run: |
           set -euo pipefail
-          THRESHOLD="${THRESHOLD_PERCENT}"
+          THRESHOLD=${THRESHOLD_PERCENT}
           R=$(( (RANDOM % 100) + 1 ))
-          echo "roll=${R} threshold=${THRESHOLD}"
+          echo "Random roll=${R}, threshold=${THRESHOLD}"
           if [ "${R}" -le "${THRESHOLD}" ]; then
             echo "do_commit=true" >> "$GITHUB_OUTPUT"
           else
             echo "do_commit=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Prepare content & commit (only if chosen)
+      - name: Prepare and push commit
         if: steps.decide.outputs.do_commit == 'true'
-        env:
-          LOG_FILE: ${{ env.LOG_FILE }}
-          TIPS_FILE: ${{ env.TIPS_FILE }}
-          ENTRIES_DIR: ${{ env.ENTRIES_DIR }}
-          COUNTER_FILE: ${{ env.COUNTER_FILE }}
-          AUTHOR_NAME: ${{ env.AUTHOR_NAME }}
-          AUTHOR_EMAIL: ${{ env.AUTHOR_EMAIL }}
         run: |
           set -euo pipefail
-
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           HUMAN_DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
 
-          mkdir -p "${ENTRIES_DIR}"
-          mkdir -p "$(dirname "${COUNTER_FILE}")"
+          mkdir -p "${ENTRIES_DIR}" "$(dirname "${COUNTER_FILE}")"
 
-          # Pick a random non-empty tip if the file exists
+          # Pick a random tip or fallback text
           if [ -f "${TIPS_FILE}" ]; then
             TIP=$(grep -v '^[[:space:]]*$' "${TIPS_FILE}" | shuf -n1)
           else
-            TIP="Note: keep learning — small steps every day."
+            TIP="Keep learning — one step at a time."
           fi
 
-          # Create a concise entry and append to cumulative log
+          # Update log file
           echo "${TIMESTAMP} - ${TIP}" >> "${LOG_FILE}"
 
-          ENTRY_FILENAME="${ENTRIES_DIR}/entry-$(date -u +"%Y%m%dT%H%M%SZ").md"
-          cat > "${ENTRY_FILENAME}" <<EOF
-## Quick note (${HUMAN_DATE})
+          # Create daily entry
+          ENTRY_FILE="${ENTRIES_DIR}/entry-$(date -u +'%Y%m%dT%H%M%SZ').md"
+          {
+            echo "## Quick note (${HUMAN_DATE})"
+            echo ""
+            echo "- ${TIP}"
+            echo ""
+            echo "> Logged automatically for repository health and study notes."
+          } > "${ENTRY_FILE}"
 
-- ${TIP}
+          # Update counter JSON
+          COUNT=$(ls "${ENTRIES_DIR}"/*.md 2>/dev/null | wc -l || echo 0)
+          {
+            echo "{"
+            echo "  \"count\": ${COUNT},"
+            echo "  \"last\": \"${TIMESTAMP}\""
+            echo "}"
+          } > "${COUNTER_FILE}"
 
-> Logged automatically for repository health and study notes.
-EOF
-
-          # Update a small JSON counter for visible metadata
-          if [ -f "${COUNTER_FILE}" ]; then
-            PREV=$(jq -r '.count // 0' "${COUNTER_FILE}" 2>/dev/null || echo 0)
-          else
-            PREV=0
-          fi
-          NEW=$((PREV + 1))
-          cat > "${COUNTER_FILE}" <<EOF
-{
-  "count": ${NEW},
-  "last": "${TIMESTAMP}"
-}
-EOF
-
-          # Configure git author
           git config user.name "${AUTHOR_NAME}"
           git config user.email "${AUTHOR_EMAIL}"
+          git add "${LOG_FILE}" "${ENTRY_FILE}" "${COUNTER_FILE}"
 
-          git add "${LOG_FILE}" "${ENTRY_FILENAME}" "${COUNTER_FILE}" || true
-
-          # Only commit if there are staged changes
           if git diff --staged --quiet; then
-            echo "No changes to commit; exiting."
+            echo "No changes to commit."
             exit 0
           fi
 
-          # Choose a varied commit subject randomly
-          SUBJECTS=(
-            "docs: add daily note"
-            "chore: daily log entry"
-            "docs: log learning note"
-            "feat: add short study note"
-            "chore: repository health entry"
-          )
-          SUBJECT=$(printf "%s\n" "${SUBJECTS[@]}" | shuf -n1)
-          git commit -m "${SUBJECT}: ${TIMESTAMP}"
+          msgs=("docs: add daily note"
+                "chore: daily log entry"
+                "docs: log learning note"
+                "feat: add short study note"
+                "chore: repo health entry"
+                "docs: update study reflections"
+                "chore: small random improvement")
+          msg=${msgs[$RANDOM % ${#msgs[@]}]}
+          git commit -m "${msg}: ${TIMESTAMP}"
 
-          # Determine branch name safely (strip refs/heads/ prefix)
-          # Note: GITHUB_REF contains refs/heads/<branch> for branch runs
-          if [ -n "${GITHUB_REF:-}" ]; then
-            REF="${GITHUB_REF#refs/heads/}"
-            TARGET_BRANCH="${REF}"
-          else
-            TARGET_BRANCH="main"
-          fi
+          branch="${GITHUB_REF#refs/heads/}"
+          [ -z "${branch}" ] && branch="main"
+          git push origin HEAD:"${branch}"
 
-          # Fallback: ensure non-empty branch
-          if [ -z "${TARGET_BRANCH}" ]; then
-            TARGET_BRANCH="main"
-          fi
-
-          git push origin HEAD:"${TARGET_BRANCH}"
-
-      - name: Exit when not chosen
+      - name: Skip run (no commit today)
         if: steps.decide.outputs.do_commit == 'false'
-        run: echo "Not committing this run (randomized decision)."
+        run: echo "🕒 Skipped this hour — random check passed with no commit."
