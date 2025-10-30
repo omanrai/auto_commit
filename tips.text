@@ -27,3 +27,134 @@ Check one CI job for flakiness and note it.
 Create a minimal reproducible example for an issue.
 Draft a short commit message template for the repo.
 Reflect: what was the smallest useful change today?
+Keep your commits small and meaningful.
+Always comment complex code.
+Use meaningful variable names.
+Review your code before pushing.
+Automate repetitive tasks using scripts.
+Practice algorithms daily.
+Refactor code to improve readability.
+Document your learning journey.
+Push progress, not perfection.
+Write tests before deploying.
+Use version control effectively.
+Focus on solving real problems.
+Plan before you start coding.
+Keep learning new technologies.
+Use descriptive commit messages.
+Don’t repeat yourself — follow DRY.
+Learn keyboard shortcuts for your IDE.
+Don’t ignore compiler warnings.
+Take breaks to improve focus.
+Stay curious — experiment often.
+Consistency matters more than intensity.
+Ask for code reviews.
+Read open-source code to learn.
+Debug logically, not emotionally.
+Keep your README up to date.
+Focus on clarity over cleverness.
+Always handle exceptions properly.
+Think about scalability early.
+Use Git branches for new features.
+Avoid global variables.
+Stay organized with folder structures.
+Keep configuration out of code.
+Write reusable components.
+Measure performance before optimizing.
+Refactor legacy code step by step.
+Track your progress weekly.
+Follow naming conventions.
+Don’t push secrets to GitHub.
+Set up environment variables properly.
+Understand your tools deeply.
+Backup your important data.
+Stay humble — there’s always more to learn.
+Teach others what you learn.
+Keep dependencies updated.
+Read error messages carefully.
+Learn how memory management works.
+Use meaningful commit prefixes.
+Balance learning and building.
+Start with a simple solution first.
+Test your assumptions early.
+Use linters to maintain code quality.
+Focus on one task at a time.
+Version your APIs properly.
+Follow semantic versioning.
+Always validate user inputs.
+Use `.gitignore` effectively.
+Never commit API keys or passwords.
+Keep documentation close to code.
+Prefer clarity over brevity.
+Collaborate — great code is team effort.
+Review PRs with care.
+Automate builds with CI/CD.
+Write unit tests regularly.
+Use environment-specific configs.
+Don’t reinvent the wheel — use libraries.
+Profile your code occasionally.
+Simplify complex logic.
+Learn how databases work internally.
+Understand time complexity.
+Avoid premature optimization.
+Comment why, not what.
+Use consistent indentation.
+Keep your main branch stable.
+Use `.env` files responsibly.
+Plan backups before you need them.
+Track your daily learning.
+Practice solving bugs from others’ code.
+Stay updated with tech trends.
+Learn data structures deeply.
+Understand REST and GraphQL basics.
+Keep frontend and backend separate.
+Secure your APIs.
+Log important system events.
+Always review merge conflicts carefully.
+Don’t commit large binaries.
+Keep commit messages in present tense.
+Review changelogs before upgrading dependencies.
+Minimize console logs in production.
+Learn regex — it’s worth it.
+Use feature flags for safe deployments.
+Build side projects to learn.
+Understand how browsers render pages.
+Learn about accessibility (a11y).
+Structure CSS systematically.
+Document API endpoints properly.
+Keep learning Git commands.
+Plan sprints and track tasks.
+Limit technical debt by refactoring.
+Use code formatters like Prettier or Black.
+Read about system design.
+Understand caching strategies.
+Write shell scripts for automation.
+Keep an eye on performance metrics.
+Avoid using root privileges unnecessarily.
+Stay consistent with code style.
+Track your errors with monitoring tools.
+Keep your repository clean and organized.
+Experiment with new frameworks.
+Contribute to open source when possible.
+Use TODO comments sparingly.
+Build prototypes before production.
+Don’t over-engineer solutions.
+Use pull requests for collaboration.
+Always test before merging.
+Learn Docker basics.
+Understand CI/CD pipelines.
+Optimize images and assets.
+Secure your database connections.
+Practice clean architecture.
+Learn about design patterns.
+Keep commits atomic.
+Organize your imports properly.
+Keep documentation beginner-friendly.
+Use meaningful README titles and badges.
+Add examples in documentation.
+Learn Linux commands.
+Track your daily goals in markdown.
+Write down what you learned today.
+Consistency is the secret to mastery.
+Be patient — learning takes time.
+Celebrate small wins.
